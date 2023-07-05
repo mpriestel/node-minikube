@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "node-app.fullname" . }}
+data:
+  MONGO_HOST: {{.Values.config.mongo_host}}
+  MONGO_DATABASE: {{.Values.config.mongo_database}}
+  MONGO_USER: {{.Values.config.mongo_user}}
+  MONGO_PASS: {{.Values.config.mongo_pass}}

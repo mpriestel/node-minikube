@@ -1,0 +1,32 @@
+name: node-minikube-deploy
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    
+    - uses: actions/checkout@v2
+
+    - name: Install minikube
+      run: bash install_minikube.sh
+
+    - name: Deploy to minikube cluster and send request
+      run: |
+        bash local_deploy.sh
+        export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=node-app,app.kubernetes.io/instance=node-app" -o jsonpath="{.items[0].metadata.name}")
+        export CONTAINER_PORT=$(kubectl get pod --namespace default $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+        kubectl --namespace default port-forward $POD_NAME 8080:$CONTAINER_PORT &
+        sleep 10
+        echo "Insert items in mongo using node-app service"
+        curl -s -d '{"name":"Mice", "quantity":3}' -H "Content-Type: application/json" -X POST 127.0.0.1:8080/item
+        curl -s -d '{"name":"Keyboards", "quantity":5}' -H "Content-Type: application/json" -X POST 127.0.0.1:8080/item
+        curl -s -d '{"name":"Monitors", "quantity":1}' -H "Content-Type: application/json" -X POST 127.0.0.1:8080/item
+        export response=$(curl 127.0.0.1:8080/items)
+        echo $response
+        exit 0
